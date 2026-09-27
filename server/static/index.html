@@ -43,7 +43,15 @@
     }
     .caption{color:#5c554e;font-size:12px;margin-top:12px;letter-spacing:0.4px;flex:0 0 auto}
   }
-  @media (max-width:519px){ .caption{display:none} }
+  @media (max-width:519px){
+    .caption{display:none}
+    /* On phones the app is position:fixed, so the browser's keyboard-driven
+       page scrolling can never push the nav up or the input bar away.
+       height + top follow the visible area (above the keyboard). */
+    .phone{
+      position:fixed;top:var(--vv-top,0px);left:0;right:0;margin:0 auto;
+    }
+  }
 
   /* ---------- Top nav ---------- */
   .topnav{
@@ -340,24 +348,34 @@
 <script>
 (function(){
   const $ = id => document.getElementById(id);
-
-  /* keep the app pinned to the visible area above the on-screen keyboard:
-     --app-height tracks visualViewport, and any browser auto-scroll is zeroed */
-  const vv = window.visualViewport;
-  if (vv) {
-    const syncViewport = () => {
-      document.documentElement.style.setProperty('--app-height', vv.height + 'px');
-      if (window.scrollX !== 0 || window.scrollY !== 0) window.scrollTo(0, 0);
-    };
-    vv.addEventListener('resize', syncViewport);
-    vv.addEventListener('scroll', syncViewport);
-    window.addEventListener('orientationchange', syncViewport);
-    syncViewport();
-  }
-
   const chat = $('chat'), drawer = $('drawer'), overlay = $('overlay'),
         menu = $('menu'), input = $('msgInput'), toast = $('toast'),
         loadmsg = $('loadmsg'), dot = $('dot');
+
+  /* ---------- keyboard-safe viewport ----------
+     The app is position:fixed on phones, so the browser cannot scroll the
+     page when the on-screen keyboard opens. --app-height / --vv-top track
+     the visual viewport (the visible area above the keyboard), and the
+     chat stays pinned to the newest messages while it resizes. */
+  const vv = window.visualViewport;
+  const syncViewport = () => {
+    if (vv) {
+      document.documentElement.style.setProperty('--app-height', vv.height + 'px');
+      document.documentElement.style.setProperty('--vv-top', Math.max(0, vv.offsetTop) + 'px');
+    }
+    if (window.scrollX !== 0 || window.scrollY !== 0) window.scrollTo(0, 0);
+    // while the keyboard opens/closes, keep the newest messages on screen
+    if (chat.scrollHeight - chat.scrollTop - chat.clientHeight < 80) chat.scrollTop = chat.scrollHeight;
+  };
+  if (vv) {
+    vv.addEventListener('resize', syncViewport);
+    vv.addEventListener('scroll', syncViewport);
+    window.addEventListener('orientationchange', syncViewport);
+  }
+  window.addEventListener('resize', syncViewport);
+  // re-sync a moment after the keyboard starts opening (animation settles late)
+  document.addEventListener('focusin', () => setTimeout(syncViewport, 300));
+  syncViewport();
 
   let model = null, busy = false, nparams = 0;
   let tempMode = localStorage.getItem('tg_temp') || 'balanced';

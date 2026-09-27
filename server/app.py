@@ -1,0 +1,107 @@
+"""TinyGPT Chat — online server.
+
+The model runs HERE (on the server); clients chat over the internet via POST /chat.
+Weights are read from the same flat `model.bin` the browser engine uses
+(state_dict order == module definition order == export order).
+Note: run from inside server/ with model.bin and config.json copied next to app.py
+(or symlinked from the repo root).
+"""
+import json
+import torch
+import torch.nn.functional as F
+from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from pydantic import BaseModel
+from model import TinyGPT
+
+app = FastAPI(title="TinyGPT Chat API")
+
+cfg = json.load(open("config.json", encoding="utf-8"))
+itos = cfg["itos"]
+stoi = {c: i for i, c in enumerate(itos)}
+BOS = cfg.get("bos", "\u0002")
+EOS = cfg.get("eos", "\u0003")
+BLOCK = cfg["block"]
+
+model = TinyGPT(cfg["vocab"], cfg["d"], cfg["n_layers"], cfg["n_heads"], cfg["ffn"], cfg["block"])
+
+# --- load flat model.bin into the state dict ---
+raw = open("model.bin", "rb").read()
+flat = torch.frombuffer(bytearray(raw), dtype=torch.float32)
+sd = model.state_dict()
+off = 0
+with torch.no_grad():
+    for k, v in sd.items():
+        n = v.numel()
+        sd[k] = flat[off:off + n].view(v.shape).clone()
+        off += n
+if off != flat.numel():
+    raise RuntimeError(f"weight size mismatch: {off} loaded vs {flat.numel()} available")
+model.load_state_dict(sd)
+model.eval()
+print(f"TinyGPT server ready — {cfg['nparams']:,} parameters loaded", flush=True)
+
+
+class Msg(BaseModel):
+    role: str
+    text: str
+
+
+class ChatRequest(BaseModel):
+    messages: list[Msg]
+    temp: float = 0.75
+    topk: int = 40
+    max_new: int = 160
+
+
+@torch.no_grad()
+def generate(messages, temp=0.75, topk=40, max_new=160):
+    prompt = BOS
+    for m in messages:
+        prompt += ("User: " if m.role == "user" else "Bot: ") + m.text.strip() + "\n"
+    prompt += "Bot:"
+    ids = [stoi[c] for c in prompt if c in stoi] or [0]
+    budget = max(16, BLOCK - max_new - 2)
+    if len(ids) > budget:
+        ids = ids[-budget:]
+    ctx = torch.tensor([ids], dtype=torch.long)
+    out = []
+    eos_id = stoi.get(EOS)
+    for _ in range(max_new):
+        logits = model(ctx[:, -BLOCK:])[0, -1]
+        if temp > 0.01:
+            logits = logits / temp
+            if 0 < topk < logits.numel():
+                kth = torch.topk(logits, topk).values[-1]
+                logits[logits < kth] = -1e9
+            probs = F.softmax(logits, dim=-1)
+            nxt = int(torch.multinomial(probs, 1))
+        else:
+            nxt = int(logits.argmax())
+        if nxt == eos_id:
+            break
+        ch = itos[nxt]
+        if ch == "\n":
+            break
+        out.append(ch)
+        if "".join(out).endswith("User:"):
+            out = out[:-6]
+            break
+        ctx = torch.cat([ctx, torch.tensor([[nxt]])], dim=1)
+    return "".join(out).strip()
+
+
+@app.get("/")
+def index():
+    return FileResponse("static/index.html")
+
+
+@app.get("/health")
+def health():
+    return {"ok": True, "params": cfg["nparams"]}
+
+
+@app.post("/chat")
+def chat(req: ChatRequest):
+    reply = generate(req.messages, req.temp, req.topk, req.max_new)
+    return {"reply": reply}

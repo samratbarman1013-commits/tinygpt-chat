@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#0a0a0a">
 <title>TinyGPT Chat — 6M-parameter AI</title>
 <link rel="manifest" href="manifest.webmanifest">
@@ -11,6 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
 <style>
   :root{
+    --vv-h:100dvh;
     --bg:#0a0a0a;
     --surface:#1f1f1f;
     --bubble-user:#2b2b2b;
@@ -28,18 +29,18 @@
     font-family:'DM Sans',-apple-system,sans-serif;
     background:radial-gradient(1200px 800px at 70% -10%, #161311 0%, #0a0a0a 55%);
     display:flex;flex-direction:column;align-items:center;justify-content:center;
-    height:100dvh;overflow:hidden;padding:0;
+    height:var(--vv-h);overflow:hidden;padding:0;
   }
 
   /* ---------- Phone frame (desktop presentation) ---------- */
   .phone{
-    position:relative;width:100%;max-width:420px;height:100vh;height:100dvh;
+    position:relative;width:100%;max-width:420px;height:100vh;height:var(--vv-h);
     background:var(--bg);display:flex;flex-direction:column;overflow:hidden;
   }
   @media (min-width:520px){
     body{padding:24px}
     .phone{
-      height:min(880px,calc(100dvh - 48px));
+      height:min(880px,calc(var(--vv-h) - 48px));
       border-radius:36px;border:1px solid rgba(255,255,255,0.09);
       box-shadow:0 30px 80px rgba(0,0,0,0.65), 0 0 0 8px #17130f, 0 0 0 9px rgba(255,255,255,0.06);
     }
@@ -340,6 +341,21 @@
 <div class="caption">TinyGPT Chat — ☰ history (pin chats), + new chat, ⋮ settings</div>
 
 <script src="engine.js"></script>
+<script>
+/* keyboard-safe viewport: keep the app exactly inside the visible area
+   (top nav + input bar stay pinned when the on-screen keyboard opens) */
+(function(){
+  var vv = window.visualViewport;
+  if (!vv) return;
+  var fit = function () {
+    document.documentElement.style.setProperty('--vv-h', vv.height + 'px');
+    if (vv.offsetTop > 0) window.scrollTo(0, 0);
+  };
+  vv.addEventListener('resize', fit);
+  vv.addEventListener('scroll', fit);
+  fit();
+})();
+</script>
 <script>
 (function(){
   const $ = id => document.getElementById(id);

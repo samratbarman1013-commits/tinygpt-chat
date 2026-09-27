@@ -1,5 +1,5 @@
 """
-Train a ~3M-parameter GPT-style decoder-only transformer chatbot on DailyDialog.
+Train a ~6M-parameter GPT-style decoder-only transformer chatbot on DailyDialog.
 Exports weights for a pure-JS inference engine (single float32 .bin + config.json).
 """
 import json, math, os, random, sys, time
@@ -9,10 +9,10 @@ import torch.nn.functional as F
 
 # ----------------------------- config -----------------------------
 BLOCK = 256          # context window
-D = 256              # embedding dim
-N_LAYER = 4
-N_HEAD = 8           # head dim 32
-FFN = 1024
+D = 288              # embedding dim
+N_LAYER = 6
+N_HEAD = 9           # head dim 32
+FFN = 1152
 LR = 1e-3
 WARMUP = 200
 TOTAL_STEPS = 8000

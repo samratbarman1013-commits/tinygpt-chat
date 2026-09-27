@@ -31,7 +31,7 @@ jobs:
         if: steps.check.outputs.exists != 'true'
         run: |
           pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
-          pip install --quiet pillow
+          pip install --quiet numpy pillow
 
       - name: Download DailyDialog dataset
         if: steps.check.outputs.exists != 'true'

@@ -3,18 +3,24 @@
 The model runs HERE (on the server); clients chat over the internet via POST /chat.
 Weights are read from the same flat `model.bin` the browser engine uses
 (state_dict order == module definition order == export order).
-Note: run from inside server/ with model.bin and config.json copied next to app.py
-(or symlinked from the repo root).
 """
 import json
 import torch
 import torch.nn.functional as F
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from model import TinyGPT
+import tools
 
 app = FastAPI(title="TinyGPT Chat API")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 cfg = json.load(open("config.json", encoding="utf-8"))
 itos = cfg["itos"]
@@ -98,10 +104,20 @@ def index():
 
 @app.get("/health")
 def health():
-    return {"ok": True, "params": cfg["nparams"]}
+    return {"ok": True, "params": cfg["nparams"],
+            "tools": ["calculator", "clock", "dice", "wikipedia", "duckduckgo"]}
 
 
 @app.post("/chat")
 def chat(req: ChatRequest):
+    # tool layer first: real, live answers for factual queries
+    last_user = next((m.text for m in reversed(req.messages) if m.role == "user"), "")
+    tool_name, answer = tools.route(last_user)
+    if tool_name:
+        return {"reply": answer, "source": tool_name}
     reply = generate(req.messages, req.temp, req.topk, req.max_new)
-    return {"reply": reply}
+    if not reply:  # model produced nothing useful -> web fallback
+        answer = tools.ddg_tool(last_user)
+        if answer:
+            return {"reply": answer, "source": "duckduckgo"}
+    return {"reply": reply, "source": "model"}

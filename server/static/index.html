@@ -26,12 +26,12 @@
     font-family:'DM Sans',-apple-system,sans-serif;
     background:radial-gradient(1200px 800px at 70% -10%, #161311 0%, #0a0a0a 55%);
     display:flex;flex-direction:column;align-items:center;justify-content:center;
-    min-height:100dvh;padding:0;
+    height:100dvh;overflow:hidden;padding:0;
   }
 
   /* ---------- Phone frame (desktop presentation) ---------- */
   .phone{
-    position:relative;width:100%;max-width:420px;height:100dvh;
+    position:relative;width:100%;max-width:420px;height:100vh;height:100dvh;
     background:var(--bg);display:flex;flex-direction:column;overflow:hidden;
   }
   @media (min-width:520px){
@@ -73,7 +73,7 @@
 
   /* ---------- Chat area ---------- */
   .chat{
-    flex:1 1 auto;overflow-y:auto;padding:6px 16px 18px;
+    flex:1 1 auto;min-height:0;overflow-y:auto;padding:6px 16px 18px;
     display:flex;flex-direction:column;gap:20px;scroll-behavior:smooth;
   }
   .chat::-webkit-scrollbar{width:0}

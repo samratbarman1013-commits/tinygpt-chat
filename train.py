@@ -1,5 +1,5 @@
 """
-Train a ~1M-parameter GPT-style decoder-only transformer chatbot on DailyDialog.
+Train a ~3M-parameter GPT-style decoder-only transformer chatbot on DailyDialog.
 Exports weights for a pure-JS inference engine (single float32 .bin + config.json).
 """
 import json, math, os, random, sys, time
@@ -9,18 +9,18 @@ import torch.nn.functional as F
 
 # ----------------------------- config -----------------------------
 BLOCK = 256          # context window
-D = 192              # embedding dim
-N_LAYER = 2
-N_HEAD = 6           # head dim 32
-FFN = 800
+D = 256              # embedding dim
+N_LAYER = 4
+N_HEAD = 8           # head dim 32
+FFN = 1024
 LR = 1e-3
-WARMUP = 150
-TOTAL_STEPS = 3000
+WARMUP = 200
+TOTAL_STEPS = 8000
 BATCH = 16
 DATA_DIR = "./data/train"
 OUT_DIR = "./run"
 LOG_EVERY = 25
-CKPT_EVERY = 500
+CKPT_EVERY = 1000
 SPECIALS = {"<bos>": "\u0002", "<eos>": "\u0003"}
 
 os.makedirs(OUT_DIR, exist_ok=True)
@@ -182,7 +182,7 @@ for step in range(1, TOTAL_STEPS + 1):
         log(f"step {step}/{TOTAL_STEPS} | train {loss.item():.3f} | val {vloss.item():.3f} | lr {lr:.2e} | {dt/LOG_EVERY:.2f}s/step")
         t0 = time.time()
 
-    if step % 500 == 0:
+    if step % 1000 == 0:
         log("--- sample after step " + str(step) + " ---")
         log("Bot says: " + sample("User: hello, how are you today?\nBot:").replace("\n", " / "))
 
@@ -220,6 +220,7 @@ meta = {
     "vocab": V, "d": D, "n_layers": N_LAYER, "n_heads": N_HEAD, "ffn": FFN,
     "block": BLOCK, "nparams": nparams,
     "itos": chars,
+    "bos": SPECIALS["<bos>"], "eos": SPECIALS["<eos>"],
 }
 with open(os.path.join(OUT_DIR, "config.json"), "w") as f:
     json.dump(meta, f)

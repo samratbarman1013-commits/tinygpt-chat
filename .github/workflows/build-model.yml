@@ -1,0 +1,63 @@
+name: Build TinyGPT model
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip if model already built
+        id: check
+        run: |
+          if [ -f model.bin ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "model.bin already present — nothing to do"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Python
+        if: steps.check.outputs.exists != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        if: steps.check.outputs.exists != 'true'
+        run: |
+          pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          pip install --quiet pillow
+
+      - name: Download DailyDialog dataset
+        if: steps.check.outputs.exists != 'true'
+        run: |
+          mkdir -p data
+          curl -sL -o train.zip "https://huggingface.co/datasets/roskoN/dailydialog/resolve/main/train.zip"
+          unzip -o -q train.zip -d data
+          ls -la data/train/
+
+      - name: Train and export the 1M-parameter model
+        if: steps.check.outputs.exists != 'true'
+        run: |
+          python train.py
+          cp run/model.bin model.bin
+          cp run/config.json config.json
+          ls -la model.bin config.json
+
+      - name: Generate icons
+        if: steps.check.outputs.exists != 'true'
+        run: python make_icons.py
+
+      - name: Commit model and assets
+        if: steps.check.outputs.exists != 'true'
+        run: |
+          git config user.name "tinygpt-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add model.bin config.json icon-192.png icon-512.png
+          git commit -m "Train + export 983,488-parameter TinyGPT chatbot (3000 steps on DailyDialog)" || echo "nothing to commit"
+          git push

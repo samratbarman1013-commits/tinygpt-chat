@@ -1,6 +1,11 @@
 name: Build TinyGPT model
 on:
   workflow_dispatch:
+    inputs:
+      rebuild:
+        description: 'Force retraining even if model.bin exists'
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -14,7 +19,7 @@ jobs:
       - name: Skip if model already built
         id: check
         run: |
-          if [ -f model.bin ]; then
+          if [ -f model.bin ] && [ "${{ inputs.rebuild }}" != "true" ]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
             echo "model.bin already present — nothing to do"
           else
@@ -41,7 +46,7 @@ jobs:
           unzip -o -q train.zip -d data
           ls -la data/train/
 
-      - name: Train and export the 1M-parameter model
+      - name: Train and export the model
         if: steps.check.outputs.exists != 'true'
         run: |
           python train.py
@@ -59,5 +64,5 @@ jobs:
           git config user.name "tinygpt-bot"
           git config user.email "actions@users.noreply.github.com"
           git add model.bin config.json icon-192.png icon-512.png
-          git commit -m "Train + export 983,488-parameter TinyGPT chatbot (3000 steps on DailyDialog)" || echo "nothing to commit"
+          git commit -m "Train + export 3,251,200-parameter TinyGPT chatbot (8000 steps on DailyDialog)" || echo "nothing to commit"
           git push

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0b1020">
-<title>TinyGPT Chat — 1M-parameter AI</title>
+<title>TinyGPT Chat — 3M-parameter AI</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <style>
@@ -88,7 +88,7 @@
   <div>
     <div class="logo" style="width:64px;height:64px;font-size:24px;margin:0 auto 16px;border-radius:18px">TG</div>
     <div style="font-weight:700;font-size:18px">Loading TinyGPT</div>
-    <div class="subtitle" id="loadmsg">fetching 1M-parameter brain…</div>
+    <div class="subtitle" id="loadmsg">fetching 3.2M-parameter brain…</div>
     <div class="bar"><i></i></div>
   </div>
 </div>
@@ -96,7 +96,7 @@
   <div class="logo">TG</div>
   <div>
     <div class="title">TinyGPT Chat</div>
-    <div class="subtitle">1M-param transformer · runs 100% on your device</div>
+    <div class="subtitle">3.2M-param transformer · runs 100% on your device</div>
   </div>
   <div class="status"><span class="dot load" id="dot"></span><span id="status">loading</span></div>
 </header>
@@ -135,7 +135,7 @@
 
   async function loadModel() {
     setStatus("load", "loading");
-    loadmsg.textContent = "fetching 1M-parameter brain…";
+    loadmsg.textContent = "fetching 3.2M-parameter brain…";
     const get = async (url, type) => {
       try { return await (await fetch(url))[type](); }
       catch (e) { // WebView file:// fallback

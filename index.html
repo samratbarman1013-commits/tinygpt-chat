@@ -378,6 +378,21 @@
   window.addEventListener('resize', syncViewport);
   // re-sync a moment after the keyboard starts opening (animation settles late)
   document.addEventListener('focusin', () => setTimeout(syncViewport, 300));
+  // safety net: while typing, poll every 300ms — even if the browser fires
+  // resize events late or never, the app snaps to the visible area anyway
+  let focusPoll = null;
+  document.addEventListener('focusin', () => {
+    clearInterval(focusPoll);
+    focusPoll = setInterval(syncViewport, 300);
+  });
+  document.addEventListener('focusout', () => {
+    setTimeout(() => {
+      if (!document.activeElement || document.activeElement === document.body) {
+        clearInterval(focusPoll);
+        syncViewport();
+      }
+    }, 300);
+  });
   syncViewport();
 
   let model = null, busy = false, nparams = 0;

@@ -1,4 +1,4 @@
-const CACHE = "tinygpt-v3-6m";
+const CACHE = "tinygpt-v4-ui";
 const ASSETS = ["./", "./index.html", "./engine.js", "./manifest.webmanifest",
                 "./model.bin", "./config.json", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", (e) => {

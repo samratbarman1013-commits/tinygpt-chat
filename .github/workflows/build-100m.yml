@@ -1,0 +1,85 @@
+name: Build TinyGPT 100M
+on:
+  workflow_dispatch:
+    inputs:
+      resume_run_id:
+        description: 'Run ID of the previous chunk (fetch its ckpt artifact)'
+        default: ''
+      steps:
+        description: 'Training steps for this chunk'
+        default: '1000'
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          pip install --quiet pyarrow
+
+      - name: Download data
+        run: |
+          mkdir -p data
+          for split in train validation test; do
+            curl -sL -o $split.zip "https://huggingface.co/datasets/roskoN/dailydialog/resolve/main/$split.zip"
+            unzip -o -q $split.zip -d data
+          done
+          curl -sL -o data/uc0.parquet "https://huggingface.co/datasets/HuggingFaceH4/ultrachat_200k/resolve/refs%2Fconvert%2Fparquet/default/train_sft/0000.parquet"
+          ls -la data/
+
+      - name: Build corpus
+        run: python data_prep.py
+
+      - name: Fetch previous chunk checkpoint
+        if: inputs.resume_run_id != ''
+        run: |
+          ART=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ inputs.resume_run_id }}/artifacts" | \
+            python3 -c "import json,sys; a=[x for x in json.load(sys.stdin)['artifacts'] if x['name']=='ckpt']; print(a[0]['id'] if a else '')")
+          if [ -n "$ART" ]; then
+            curl -sL -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -o ckpt.zip "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ART/zip"
+            mkdir -p run && unzip -o ckpt.zip -d run
+            ls -la run/
+          else
+            echo "no ckpt artifact found on run ${{ inputs.resume_run_id }} — starting fresh"
+          fi
+
+      - name: Train
+        env:
+          STEPS_PER_RUN: ${{ inputs.steps }}
+          RESUME: run/ckpt.pt
+        run: python train_100m.py
+
+      - name: Publish final model release
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f run/DONE ]; then
+            gh release create v2.0 --title "TinyGPT 100M" --notes "Final 100M-parameter TinyGPT model (DailyDialog + UltraChat, 8000 steps)." || true
+            gh release upload v2.0 run/model.bin run/config.json --clobber
+            echo "FINAL MODEL RELEASED"
+          else
+            echo "chunk finished; more to do"
+          fi
+
+      - name: Upload checkpoint artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ckpt
+          path: run/ckpt.pt
+          if-no-files-found: ignore

@@ -1,0 +1,13 @@
+{
+  "name": "TinyGPT Chat — 1M Parameter AI",
+  "short_name": "TinyGPT",
+  "description": "A real 1M-parameter transformer chatbot that runs entirely on your device.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "0b1020",
+  "theme_color": "0b1020",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

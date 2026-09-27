@@ -57,7 +57,7 @@
     border-top: 1px solid rgba(108, 140, 255, .15);
   }
   #input {
-    flex: 1; background: var(--panel2); border: 1px solid rgba(108, 140, 255, .25);
+    flex: 1; background: var(--panel2); border: 1px solid rgba(108,140,255,.25);
     color: var(--text); border-radius: 22px; padding: 12px 16px; font-size: 15px; outline: none;
   }
   #input:focus { border-color: var(--accent); }
@@ -73,7 +73,7 @@
   <div class="logo">TG</div>
   <div>
     <div class="title">TinyGPT Chat</div>
-    <div class="subtitle">1M-param transformer · server mode</div>
+    <div class="subtitle">TinyGPT + live web tools · server mode</div>
   </div>
   <div class="status"><span class="dot ok" id="dot"></span><span id="status">online</span></div>
 </header>
@@ -133,7 +133,10 @@
       if (history.length > 6) history.splice(0, 2);
       typing.remove();
       addMsg("bot", data.reply || "…");
-      addMsg("sys", "server-generated in " + dt + "s · via internet");
+      const src = { model: "AI model", wikipedia: "🌐 live web (Wikipedia)",
+                    duckduckgo: "🌐 live web (DuckDuckGo)", calculator: "🧮 calculator",
+                    clock: "🕰 clock", dice: "🎲 dice" }[data.source] || data.source;
+      addMsg("sys", "answered by " + src + " · " + dt + "s · via internet");
       setStatus("ok", "online");
     } catch (e) {
       typing.remove();
@@ -148,15 +151,17 @@
 
   // wait for the server to finish loading the model
   setStatus("ok", "connecting…");
+  let params = null;
   for (let i = 0; i < 60; i++) {
     try {
       const h = await fetch("/health");
-      if (h.ok) break;
+      if (h.ok) { params = (await h.json()).params; break; }
     } catch (e) {}
     await new Promise(r => setTimeout(r, 1000));
   }
-  setStatus("ok", "online · server-side AI");
-  addMsg("sys", "TinyGPT online — 983,488-parameter transformer running on the server. Chat happens over the internet; nothing runs on your phone.");
+  setStatus("ok", "online · server-side AI + web tools");
+  const pn = params ? params.toLocaleString() : "";
+  addMsg("sys", "TinyGPT online — " + (pn ? pn + "-parameter " : "") + "AI running on the server. I can also use live tools: ask me a factual question (\"who is Virat Kohli\"), a calculation (\"what is 23*7\"), the time, or just chat!");
 })();
 </script>
 </body>

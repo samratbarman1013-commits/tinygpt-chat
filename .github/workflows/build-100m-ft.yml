@@ -1,0 +1,103 @@
+name: Fine-tune TinyGPT 100M Tools
+on:
+  workflow_dispatch:
+    inputs:
+      resume_run_id:
+        description: 'Run ID of the previous chunk (fetch its ckpt artifact)'
+        default: ''
+      steps:
+        description: 'Training steps for this chunk'
+        default: '1200'
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          pip install --quiet numpy pyarrow
+
+      - name: Download data
+        run: |
+          mkdir -p data
+          for split in train validation test; do
+            curl -sL -o $split.zip "https://huggingface.co/datasets/roskoN/dailydialog/resolve/main/$split.zip"
+            unzip -o -q $split.zip -d data
+          done
+          curl -sL -o data/uc0.parquet "https://huggingface.co/datasets/HuggingFaceH4/ultrachat_200k/resolve/refs%2Fconvert%2Fparquet/default/train_sft/0000.parquet"
+          ls -la data/
+
+      - name: Build corpus + tool dialogues
+        run: |
+          python data_prep.py
+          python tool_data.py
+          python data_prep_ft.py
+
+      - name: Fetch previous chunk checkpoint
+        if: inputs.resume_run_id != ''
+        run: |
+          ART=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ inputs.resume_run_id }}/artifacts" | \
+            python3 -c "import json,sys; a=[x for x in json.load(sys.stdin)['artifacts'] if x['name']=='ckpt']; print(a[0]['id'] if a else '')")
+          if [ -n "$ART" ]; then
+            curl -sL -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -o ckpt.zip "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ART/zip"
+            mkdir -p run && unzip -o ckpt.zip -d run
+            ls -la run/
+          else
+            echo "no ckpt artifact found on run ${{ inputs.resume_run_id }} — starting fresh"
+          fi
+
+      - name: Train
+        env:
+          STEPS_PER_RUN: ${{ inputs.steps }}
+          RESUME: run/ckpt.pt
+          TTOTAL_STEPS: '10000'
+        run: python train_100m.py
+
+      - name: Save final model as DRAFT release
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f run/DONE ]; then
+            gh release create v2.1 --draft --title "Karma 100M Tools" --notes "100M Karma model fine-tuned for tool calling (calc/wiki/clock/dice) on top of the 8000-step base. DRAFT = private, only visible to the repo owner." || true
+            gh release upload v2.1 run/model.bin run/config.json --clobber
+            echo "FINAL TOOL MODEL SAVED AS DRAFT (not public)"
+          else
+            echo "chunk finished; more to do"
+          fi
+
+      - name: Upload checkpoint artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ckpt
+          path: run/ckpt.pt
+          if-no-files-found: ignore
+
+      - name: Chain next chunk
+        if: always() && job.status != 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f run/DONE ]; then
+            echo "TOOL FINE-TUNE COMPLETE - final model saved as DRAFT release v2.1"
+          elif [ -f run/ckpt.pt ]; then
+            gh workflow run build-100m-ft.yml --ref main -f resume_run_id=${{ github.run_id }} -f steps=1200
+            echo "CHAINED: next fine-tune chunk dispatched from run ${{ github.run_id }}"
+          else
+            echo "no checkpoint to chain from - manual dispatch needed"
+          fi

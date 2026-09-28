@@ -139,3 +139,10 @@ def chat(req: ChatRequest):
         if answer:
             return {"reply": answer, "source": "duckduckgo"}
     return {"reply": reply, "source": "model"}
+
+
+if __name__ == "__main__":
+    # direct run (python app.py) — used on free Hugging Face Gradio-SDK Spaces,
+    # which just execute app.py and expect the server on port 7860
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=7860)

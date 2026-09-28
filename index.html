@@ -24,6 +24,7 @@
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;overflow:hidden}
+  html{background:#0a0a0a} /* never show white below the app while the keyboard animates */
   body{
     font-family:'DM Sans',-apple-system,sans-serif;
     background:radial-gradient(1200px 800px at 70% -10%, #161311 0%, #0a0a0a 55%);
@@ -47,11 +48,12 @@
   }
   @media (max-width:519px){
     .caption{display:none}
-    /* On phones the app is position:fixed, so the browser's keyboard-driven
-       page scrolling can never push the nav up or the input bar away.
-       height + top follow the visible area (above the keyboard). */
+    /* On phones the app is pinned to the visible area from BOTH edges
+       (top + bottom), so it always fills it exactly — even while the
+       keyboard is still animating open. No gap can ever appear. */
     .phone{
-      position:fixed;top:var(--vv-top,0px);left:0;right:0;margin:0 auto;
+      position:fixed;top:var(--vv-top,0px);bottom:var(--vv-bottom,0px);
+      left:0;right:0;margin:0 auto;height:auto;
     }
   }
 
@@ -356,15 +358,18 @@
         loadmsg = $('loadmsg'), dot = $('dot');
 
   /* ---------- keyboard-safe viewport ----------
-     The app is position:fixed on phones, so the browser cannot scroll the
-     page when the on-screen keyboard opens. --app-height / --vv-top track
-     the visual viewport (the visible area above the keyboard), and the
-     chat stays pinned to the newest messages while it resizes. */
+     On phones the app is position:fixed, pinned to the visible area from
+     both edges (top + bottom), so the browser cannot scroll it and no gap
+     can appear while the keyboard animates open or closed. */
   const vv = window.visualViewport;
   const syncViewport = () => {
     if (vv) {
       document.documentElement.style.setProperty('--app-height', vv.height + 'px');
       document.documentElement.style.setProperty('--vv-top', Math.max(0, vv.offsetTop) + 'px');
+      // on browsers that do NOT resize the layout viewport, the keyboard
+      // hides part of it -- pin the app's bottom above the keyboard
+      const hidden = Math.max(0, document.documentElement.clientHeight - vv.offsetTop - vv.height);
+      document.documentElement.style.setProperty('--vv-bottom', hidden + 'px');
     }
     if (window.scrollX !== 0 || window.scrollY !== 0) window.scrollTo(0, 0);
     // while the keyboard opens/closes, keep the newest messages on screen

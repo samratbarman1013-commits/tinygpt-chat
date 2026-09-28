@@ -6,6 +6,7 @@ chunks on GitHub Actions (CPU), with checkpoint resume between chunks.
 Env knobs (used for local testing; CI uses defaults):
   TDIM (832) TLAYERS (12) THEADS (13) TFFN (3328) TTOTAL_STEPS (8000)
   STEPS_PER_RUN (1000)  RESUME (path to ckpt.pt from previous chunk)
+  CHARSET_FILE (json list of codepoints; freezes vocab to an exact charset)
 """
 import json, math, os, random, time
 import torch
@@ -59,7 +60,16 @@ def render(dialogue_list):
     return "".join(out)
 
 train_text = render(train_dialogues)
-chars = sorted(set(train_text))
+# CHARSET_FILE: freeze the vocab to an exact charset (e.g. charset648.json)
+# so resumed checkpoints always match. Without it, vocab is derived from
+# this particular train split and can drift (334/649/641 crashes, 2026-09-29).
+CHARSET_FILE = os.environ.get("CHARSET_FILE", "")
+if CHARSET_FILE and os.path.exists(CHARSET_FILE):
+    chars = [chr(i) for i in json.load(open(CHARSET_FILE, encoding="utf-8"))]
+    missing = set(train_text) - set(chars)
+    assert not missing, f"train text has chars outside CHARSET_FILE: {sorted(missing)[:5]}"
+else:
+    chars = sorted(set(train_text))
 V = len(chars)
 stoi = {c: i for i, c in enumerate(chars)}
 train_ids = torch.tensor([stoi[c] for c in train_text], dtype=torch.long)

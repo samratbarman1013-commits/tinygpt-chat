@@ -427,7 +427,7 @@
   });
   syncViewport();
 
-  let busy = false, nparams = 0, apiBase = null, greeted = false;
+  let busy = false, nparams = 0, apiBase = null;
   let tempMode = localStorage.getItem('tg_temp') || 'balanced';
   const TEMPS = { precise: 0.3, balanced: 0.75, creative: 1.05 };
 
@@ -661,13 +661,6 @@
     apiBase = base; nparams = health.params || 0;
     setDot('ok');
     if ($('loader')) $('loader').remove();
-    if (!greeted) {
-      greeted = true;
-      const c = curChat();
-      if (c.title === 'New chat') c.title = 'Welcome';
-      c.messages.push({ role: 'bot', text: 'Hi! I\u2019m Karma \u2014 online and ready. Ask me anything, or just say hi!', meta: 'server-side \u00b7 via internet' });
-      save(); renderChat(); renderDrawer();
-    }
     return true;
   }
 
@@ -687,7 +680,7 @@
     if (!apiBase) { openSrv(); return; }
     busy = true; $('sendBtn').disabled = true; input.value = '';
     const c = curChat();
-    if (c.title === 'New chat' || c.title === 'Welcome') {
+    if (c.title === 'New chat') {
       c.title = text.length > 26 ? text.slice(0, 26) + '\u2026' : text;
     }
     c.messages.push({ role: 'user', text });

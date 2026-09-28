@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#0a0a0a">
-<title>Karma Chat — 6M-parameter AI</title>
+<title>Karma Chat — online AI</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -131,7 +131,7 @@
   .typing span:nth-child(3){animation-delay:.36s}
   @keyframes blink{0%,80%,100%{opacity:.25;transform:scale(.9)}40%{opacity:1;transform:scale(1)}}
 
-  /* loader (model load) */
+  /* loader (connect) */
   .loadwrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--faint);font-size:14px}
   .loadbar{width:180px;height:5px;border-radius:3px;background:var(--surface);overflow:hidden}
   .loadbar i{display:block;height:100%;width:35%;background:var(--send);animation:slide 1.1s ease-in-out infinite}
@@ -224,7 +224,7 @@
 
   /* ---------- Settings dropdown (3-dot) ---------- */
   .menu{
-    position:absolute;top:96px;right:12px;z-index:60;min-width:210px;
+    position:absolute;top:96px;right:12px;z-index:60;min-width:230px;
     background:#232323;border:1px solid var(--border);border-radius:14px;
     padding:7px;box-shadow:0 16px 44px rgba(0,0,0,0.6);
     opacity:0;transform:scale(.94) translateY(-6px);transform-origin:top right;
@@ -245,9 +245,31 @@
     position:absolute;bottom:110px;left:50%;transform:translateX(-50%) translateY(8px);
     background:#2e2e2e;color:var(--text);font-size:13px;font-family:inherit;
     padding:9px 18px;border-radius:20px;opacity:0;pointer-events:none;
-    transition:opacity .2s,transform .2s;z-index:70;box-shadow:0 8px 24px rgba(0,0,0,.5);
+    transition:opacity .2s,transform .2s;z-index:90;box-shadow:0 8px 24px rgba(0,0,0,.5);
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ---------- Server-address panel ---------- */
+  .srv-panel{
+    position:absolute;z-index:80;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:min(330px,86%);background:#232323;border:1px solid var(--border);
+    border-radius:18px;padding:22px 18px 18px;
+    box-shadow:0 24px 64px rgba(0,0,0,0.6);display:none;
+  }
+  .srv-panel.show{display:block}
+  .srv-panel h3{color:var(--text);font-size:17px;font-weight:700;margin-bottom:6px}
+  .srv-panel p{color:var(--faint);font-size:12.5px;line-height:1.5;margin-bottom:14px}
+  .srv-panel input{
+    width:100%;background:var(--bg);border:1px solid var(--border);border-radius:12px;
+    color:var(--text);font-family:inherit;font-size:13.5px;padding:11px 12px;
+    outline:none;margin-bottom:12px;
+  }
+  .srv-panel input:focus{border-color:var(--send)}
+  .srv-panel .connect{
+    width:100%;background:var(--send);border:none;border-radius:12px;color:#fff;
+    font-family:inherit;font-size:15px;font-weight:500;padding:12px;cursor:pointer;
+  }
+  .srv-panel .connect:active{transform:scale(.98)}
 
   @media (prefers-reduced-motion:reduce){
     *{animation:none!important;transition:none!important}
@@ -283,7 +305,7 @@
   <main class="chat" id="chat">
     <div class="loadwrap" id="loader">
       <div class="loadbar"><i></i></div>
-      <div id="loadmsg">loading Karma…</div>
+      <div id="loadmsg">connecting to Karma…</div>
     </div>
   </main>
 
@@ -325,6 +347,12 @@
 
   <!-- settings menu -->
   <div class="menu" id="menu" role="menu">
+    <button role="menuitem" id="srvBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>
+      </svg>
+      <span id="srvLabel">Server URL</span>
+    </button>
     <button role="menuitem" id="tempBtn">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -345,17 +373,25 @@
     </button>
   </div>
 
+  <!-- server address panel -->
+  <div class="srv-panel" id="srvPanel">
+    <h3>Server address</h3>
+    <p>Karma is an online AI — the model lives on a server. Enter the server address to connect.</p>
+    <input id="srvInput" type="url" placeholder="https://your-server.example.com" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <button class="connect" id="srvSave">Connect</button>
+  </div>
+
   <div class="toast" id="toast">Copied</div>
 </div>
 <div class="caption">Karma Chat — ☰ history (pin chats), + new chat, ⋮ settings</div>
 
-<script src="engine.js"></script>
 <script>
 (function(){
   const $ = id => document.getElementById(id);
   const chat = $('chat'), drawer = $('drawer'), overlay = $('overlay'),
         menu = $('menu'), input = $('msgInput'), toast = $('toast'),
-        loadmsg = $('loadmsg'), dot = $('dot');
+        loadmsg = $('loadmsg'), dot = $('dot'),
+        srvPanel = $('srvPanel'), srvInput = $('srvInput');
 
   /* ---------- keyboard-safe viewport ----------
      On phones the app is position:fixed, pinned to the visible area from
@@ -400,7 +436,7 @@
   });
   syncViewport();
 
-  let model = null, busy = false, nparams = 0;
+  let busy = false, nparams = 0, apiBase = null, greeted = false;
   let tempMode = localStorage.getItem('tg_temp') || 'balanced';
   const TEMPS = { precise: 0.3, balanced: 0.75, creative: 1.05 };
 
@@ -420,11 +456,11 @@
 
   /* ---------- drawer / menu / toast ---------- */
   const openDrawer = () => { drawer.classList.add('show'); overlay.classList.add('show'); };
-  const closeDrawer = () => { drawer.classList.remove('show'); overlay.classList.remove('show'); };
+  const closeDrawer = () => { drawer.classList.remove('show'); if (!srvPanel.classList.contains('show')) overlay.classList.remove('show'); };
   const closeMenu = () => menu.classList.remove('show');
   $('menuBtn').addEventListener('click', () => { closeMenu(); openDrawer(); });
   $('drawerClose').addEventListener('click', closeDrawer);
-  overlay.addEventListener('click', () => { closeDrawer(); closeMenu(); });
+  overlay.addEventListener('click', () => { closeDrawer(); closeMenu(); closeSrv(); });
   $('dotsBtn').addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('show'); closeDrawer(); });
   document.addEventListener('click', e => {
     if (!menu.contains(e.target) && e.target.closest('#dotsBtn') === null) closeMenu();
@@ -544,54 +580,115 @@
   });
   $('aboutBtn').addEventListener('click', () => {
     closeMenu();
-    showToast((nparams ? nparams.toLocaleString() + '-parameter ' : '') + 'Karma \u00b7 100% on this device');
+    showToast((nparams ? nparams.toLocaleString() + '-parameter ' : '') + 'Karma \u00b7 online AI with live web tools');
   });
   $('helpBtn').addEventListener('click', () => {
     closeMenu();
     window.open('https://github.com/samratbarman1013-commits/tinygpt-chat', '_blank');
   });
 
-  /* ---------- backend: on-device engine ---------- */
+  /* ---------- server address ---------- */
+  const shortUrl = u => !u ? 'Server URL' : (u.replace(/^https?:\/\//, '').slice(0, 22) || 'Server URL');
+  const refreshSrvLabel = () => {
+    const u = localStorage.getItem('karma_api');
+    $('srvLabel').textContent = shortUrl(u || (apiBase || ''));
+  };
+  const openSrv = () => {
+    srvInput.value = localStorage.getItem('karma_api') || (apiBase || '');
+    srvPanel.classList.add('show');
+    overlay.classList.add('show');
+    closeDrawer(); closeMenu();
+    setTimeout(() => { try { srvInput.focus(); } catch (e) {} }, 60);
+  };
+  const closeSrv = () => { srvPanel.classList.remove('show'); if (!drawer.classList.contains('show')) overlay.classList.remove('show'); };
+  $('srvBtn').addEventListener('click', openSrv);
+  $('srvSave').addEventListener('click', async () => {
+    let v = (srvInput.value || '').trim().replace(/\/+$/, '');
+    if (v && !/^https?:\/\//i.test(v)) v = 'https://' + v;
+    if (!v) { showToast('enter a server address'); return; }
+    localStorage.setItem('karma_api', v);
+    refreshSrvLabel();
+    closeSrv();
+    setDot('load');
+    const lw = $('loader') || null;
+    if (lw) { loadmsg.textContent = 'connecting to ' + shortUrl(v) + '\u2026'; }
+    const ok = await connect(v);
+    if (!ok) showToast('could not reach ' + shortUrl(v));
+  });
+  srvInput.addEventListener('keydown', e => { if (e.key === 'Enter') $('srvSave').click(); });
+
+  /* ---------- backend: server API (model + live web tools) ---------- */
   function setDot(kind) {
     dot.className = 'dot ' + kind;
-    dot.title = kind === 'ok' ? 'model ready' : kind === 'bad' ? 'failed' : 'loading';
+    dot.title = kind === 'ok' ? 'connected' : kind === 'bad' ? 'failed' : 'connecting';
   }
 
-  async function loadModel() {
+  async function tryHealth(base) {
+    try {
+      const ctrl = ('AbortSignal' in window && AbortSignal.timeout) ? AbortSignal.timeout(4000) : undefined;
+      const r = await fetch(base + '/health', { signal: ctrl });
+      if (r.ok) { const j = await r.json(); return j; }
+    } catch (e) {}
+    return null;
+  }
+
+  // candidates in priority order: saved address -> this origin (when the
+  // server itself serves this page) -> nothing (ask the user)
+  async function resolveBase() {
+    const saved = (localStorage.getItem('karma_api') || '').replace(/\/+$/, '');
+    if (saved) {
+      const j = await tryHealth(saved);
+      if (j) return { base: saved, health: j };
+      return null; // a saved address that is down -> let the user fix it
+    }
+    if (location.origin && location.origin !== 'null' &&
+        (location.protocol === 'https:' || location.protocol === 'http:')) {
+      const j = await tryHealth(location.origin);
+      if (j) return { base: location.origin, health: j };
+    }
+    return null;
+  }
+
+  async function connect(base) {
     setDot('load');
-    const get = async (url, type) => {
-      try { return await (await fetch(url))[type](); }
-      catch (e) { // WebView file:// fallback
-        return await new Promise((res, rej) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open('GET', url);
-          xhr.responseType = type === 'json' ? 'text' : 'arraybuffer';
-          xhr.onload = () => res(type === 'json' ? JSON.parse(xhr.responseText) : xhr.response);
-          xhr.onerror = () => rej(xhr.status || new Error('load failed'));
-          xhr.send();
-        });
-      }
-    };
-    loadmsg.textContent = 'fetching model…';
-    const cfg = await get('config.json', 'json');
-    nparams = cfg.nparams;
-    loadmsg.textContent = 'reading weights…';
-    const buf = await get('model.bin', 'arraybuffer');
-    loadmsg.textContent = 'warming up…';
-    model = new TinyGPT(cfg, new Float32Array(buf));
-    model.reply([{ role: 'user', text: 'hi' }], { maxNew: 2 });
-    $('loader').remove();
+    let health = null;
+    for (let i = 0; i < 30; i++) {
+      health = await tryHealth(base);
+      if (health) break;
+      await new Promise(r => setTimeout(r, 1000));
+    }
+    if (!health) {
+      setDot('bad');
+      if (loadmsg && $('loader')) loadmsg.textContent = 'could not reach ' + shortUrl(base) + ' \u2014 check internet, or set the address again';
+      return false;
+    }
+    apiBase = base; nparams = health.params || 0;
     setDot('ok');
-    const c = curChat();
-    if (c.title === 'New chat') c.title = 'Welcome';
-    c.messages.push({ role: 'bot', text: 'Hi! I\u2019m Karma \u2014 ' + nparams.toLocaleString() + ' parameters running 100% on this device. I\u2019m tiny and trained from scratch, so keep it simple \u2014 ask me something!', meta: 'on-device \u00b7 offline' });
-    save(); renderChat(); renderDrawer();
+    if ($('loader')) $('loader').remove();
+    if (!greeted) {
+      greeted = true;
+      const c = curChat();
+      if (c.title === 'New chat') c.title = 'Welcome';
+      c.messages.push({ role: 'bot', text: 'Hi! I\u2019m Karma \u2014 ' + (nparams ? nparams.toLocaleString() + ' parameters, ' : '') + 'running on the server. I can chat \u2014 and I also use live tools: ask me \u201cwho is Virat Kohli\u201d, \u201cwhat is 23*7\u201d, the time\u2026 or just say hi!', meta: 'server-side \u00b7 via internet' });
+      save(); renderChat(); renderDrawer();
+    }
+    return true;
   }
 
   /* ---------- send ---------- */
+  const SOURCE_LABEL = {
+    model: 'Karma model',
+    wikipedia: '\ud83c\udf10 live web (Wikipedia)',
+    duckduckgo: '\ud83c\udf10 live web (DuckDuckGo)',
+    calculator: '\ud83e\uddee calculator',
+    clock: '\ud83d\udd70 clock',
+    dice: '\ud83c\udfb2 dice'
+  };
+
   async function send() {
     const text = input.value.trim();
-    if (!text || busy || !model) return;
+    if (!text || busy) return;
+    if (!apiBase) { openSrv(); return; }
     busy = true; $('sendBtn').disabled = true; input.value = '';
     const c = curChat();
     if (c.title === 'New chat' || c.title === 'Welcome') {
@@ -609,18 +706,25 @@
     const t0 = performance.now();
     let reply = null, meta = '';
     try {
-      await new Promise(r => setTimeout(r, 30));
       const hist = c.messages.slice(-7, -1).map(m => ({ role: m.role, text: m.text }));
-      reply = model.reply(hist, { temp: TEMPS[tempMode], topk: 40 });
+      const res = await fetch(apiBase + '/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: hist, temp: TEMPS[tempMode] })
+      });
+      if (!res.ok) throw new Error('server error ' + res.status);
+      const data = await res.json();
+      reply = data.reply || '\u2026';
       const dt = ((performance.now() - t0) / 1000).toFixed(1);
-      meta = 'generated in ' + dt + 's \u00b7 100% on this device';
+      meta = (SOURCE_LABEL[data.source] || data.source) + ' \u00b7 ' + dt + 's \u00b7 via internet';
     } catch (e) {
       setDot('bad');
-      reply = '\u26a0 ' + e.message;
+      reply = '\u26a0 could not reach the server \u2014 check your internet connection (server: ' + shortUrl(apiBase) + ')';
+      meta = '';
     }
     t.remove();
-    c.messages.push({ role: 'bot', text: reply || '\u2026', meta });
-    addAiMsg(reply || '\u2026', meta);
+    c.messages.push({ role: 'bot', text: reply, meta });
+    addAiMsg(reply, meta);
     save(); scrollDown();
     busy = false; $('sendBtn').disabled = false;
     // keep focus only on desktop (no on-screen keyboard there) — on phones
@@ -633,17 +737,17 @@
 
   /* ---------- boot ---------- */
   renderChat(); renderDrawer();
+  refreshSrvLabel();
   // open the keyboard once, the first time the app loads
   // (browsers that require a user gesture simply ignore this)
   try { input.focus(); } catch (e) {}
-  loadModel().then(() => {
-    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
-    }
-  }).catch(e => {
+  (async () => {
+    const found = await resolveBase();
+    if (found) { await connect(found.base); return; }
     setDot('bad');
-    loadmsg.textContent = 'Failed to load model: ' + e.message;
-  });
+    if ($('loader') && loadmsg) loadmsg.textContent = 'no server connected';
+    setTimeout(openSrv, 400);
+  })();
 })();
 </script>
 </body>

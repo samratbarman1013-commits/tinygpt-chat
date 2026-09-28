@@ -665,7 +665,7 @@
       greeted = true;
       const c = curChat();
       if (c.title === 'New chat') c.title = 'Welcome';
-      c.messages.push({ role: 'bot', text: 'Hi! I\u2019m Karma \u2014 ' + (nparams ? nparams.toLocaleString() + ' parameters, ' : '') + 'running on the server. I can chat \u2014 and I also use live tools: ask me \u201cwho is Virat Kohli\u201d, \u201cwhat is 23*7\u201d, the time\u2026 or just say hi!', meta: 'server-side \u00b7 via internet' });
+      c.messages.push({ role: 'bot', text: 'Hi! I\u2019m Karma \u2014 online and ready. Ask me anything, or just say hi!', meta: 'server-side \u00b7 via internet' });
       save(); renderChat(); renderDrawer();
     }
     return true;

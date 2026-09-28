@@ -63,15 +63,15 @@ jobs:
           RESUME: run/ckpt.pt
         run: python train_100m.py
 
-      - name: Publish final model release
+      - name: Save final model as DRAFT release
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -f run/DONE ]; then
-            gh release create v2.0 --title "TinyGPT 100M" --notes "Final 100M-parameter TinyGPT model (DailyDialog + UltraChat, 8000 steps)." || true
+            gh release create v2.0 --draft --title "Karma 100M" --notes "Final 100M-parameter Karma model (DailyDialog + UltraChat, 8000 steps). DRAFT = private, only visible to the repo owner. Download model.bin from here to upload to the private HF repo / Space." || true
             gh release upload v2.0 run/model.bin run/config.json --clobber
-            echo "FINAL MODEL RELEASED"
+            echo "FINAL MODEL SAVED AS DRAFT (not public)"
           else
             echo "chunk finished; more to do"
           fi
@@ -90,7 +90,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -f run/DONE ]; then
-            echo "TRAINING COMPLETE - final model released as v2.0"
+            echo "TRAINING COMPLETE - final model saved as DRAFT release v2.0"
           elif [ -f run/ckpt.pt ]; then
             gh workflow run build-100m.yml --ref main -f resume_run_id=${{ github.run_id }} -f steps=1200
             echo "CHAINED: next chunk dispatched from run ${{ github.run_id }}"

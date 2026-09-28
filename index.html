@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#0a0a0a">
-<title>TinyGPT Chat — 6M-parameter AI</title>
+<title>Karma Chat — 6M-parameter AI</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -266,7 +266,7 @@
       </svg>
     </button>
     <span class="dot load" id="dot"></span>
-    <div class="title" id="chatTitle">TinyGPT</div>
+    <div class="title" id="chatTitle">Karma</div>
     <button class="iconbtn iconbtn--round" id="newChatBtn" aria-label="New chat">
       <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -283,7 +283,7 @@
   <main class="chat" id="chat">
     <div class="loadwrap" id="loader">
       <div class="loadbar"><i></i></div>
-      <div id="loadmsg">loading TinyGPT…</div>
+      <div id="loadmsg">loading Karma…</div>
     </div>
   </main>
 
@@ -347,7 +347,7 @@
 
   <div class="toast" id="toast">Copied</div>
 </div>
-<div class="caption">TinyGPT Chat — ☰ history (pin chats), + new chat, ⋮ settings</div>
+<div class="caption">Karma Chat — ☰ history (pin chats), + new chat, ⋮ settings</div>
 
 <script src="engine.js"></script>
 <script>
@@ -518,7 +518,7 @@
         else addAiMsg(m.text, m.meta || null);
       });
     }
-    $('chatTitle').textContent = c.title === 'New chat' ? 'TinyGPT' : c.title;
+    $('chatTitle').textContent = c.title === 'New chat' ? 'Karma' : c.title;
   }
 
   function switchChat(id) { cur = id; renderChat(); renderDrawer(); }
@@ -544,7 +544,7 @@
   });
   $('aboutBtn').addEventListener('click', () => {
     closeMenu();
-    showToast((nparams ? nparams.toLocaleString() + '-parameter ' : '') + 'TinyGPT \u00b7 100% on this device');
+    showToast((nparams ? nparams.toLocaleString() + '-parameter ' : '') + 'Karma \u00b7 100% on this device');
   });
   $('helpBtn').addEventListener('click', () => {
     closeMenu();
@@ -584,7 +584,7 @@
     setDot('ok');
     const c = curChat();
     if (c.title === 'New chat') c.title = 'Welcome';
-    c.messages.push({ role: 'bot', text: 'Hi! I\u2019m TinyGPT \u2014 ' + nparams.toLocaleString() + ' parameters running 100% on this device. I\u2019m tiny and trained from scratch, so keep it simple \u2014 ask me something!', meta: 'on-device \u00b7 offline' });
+    c.messages.push({ role: 'bot', text: 'Hi! I\u2019m Karma \u2014 ' + nparams.toLocaleString() + ' parameters running 100% on this device. I\u2019m tiny and trained from scratch, so keep it simple \u2014 ask me something!', meta: 'on-device \u00b7 offline' });
     save(); renderChat(); renderDrawer();
   }
 

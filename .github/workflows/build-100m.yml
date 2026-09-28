@@ -7,11 +7,11 @@ on:
         default: ''
       steps:
         description: 'Training steps for this chunk'
-        default: '1000'
+        default: '1200'
 
 permissions:
   contents: write
-  actions: read
+  actions: write
 
 jobs:
   train:
@@ -83,3 +83,17 @@ jobs:
           name: ckpt
           path: run/ckpt.pt
           if-no-files-found: ignore
+
+      - name: Chain next chunk
+        if: always() && job.status != 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f run/DONE ]; then
+            echo "TRAINING COMPLETE - final model released as v2.0"
+          elif [ -f run/ckpt.pt ]; then
+            gh workflow run build-100m.yml --ref main -f resume_run_id=${{ github.run_id }} -f steps=1200
+            echo "CHAINED: next chunk dispatched from run ${{ github.run_id }}"
+          else
+            echo "no checkpoint to chain from - manual dispatch needed"
+          fi

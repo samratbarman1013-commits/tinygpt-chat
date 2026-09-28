@@ -41,5 +41,17 @@ curl -X POST https://YOUR-SERVER/chat -H 'Content-Type: application/json' \
 ## Deploy on a Hugging Face Space (free, ~16 GB RAM)
 
 1. Create a free account at https://huggingface.co
-2. **New Space** → name it (e.g. `karma-chat`) → SDK: **Docker** → Space hardware: free CPU
-3. Upload all files from this package (`app.py`, `tools.py`, `model.py`, `Dockerfile`, `requirements.txt`, `static/`) — "Add file → Upload files
+2. **New Space** → name it (e.g. `karma-chat`) → SDK: **Docker** → hardware: free CPU
+3. Upload all files from this package (`app.py`, `tools.py`, `model.py`, `Dockerfile`, `requirements.txt`, `static/`) via **Add file → Upload files**
+4. Add the model weights — two options:
+   - **Simple:** upload `model.bin` + `config.json` directly into the Space as well.
+   - **Private (recommended for big models):** put `model.bin` + `config.json` in a **private** Hugging Face repo (your profile → New Model repo → Private), then in the Space go to **Settings → Variables and secrets** and add secrets: `HF_REPO` = `your-username/repo-name` and `HF_TOKEN` = a Hugging Face access token (create one at Settings → Access Tokens, role `read`). The Space then downloads the model privately at startup — the model file is never public.
+5. Wait for the build to finish. Your API address is the Space URL: `https://your-name-karma-chat.hf.space` — enter it in the app under ⋮ → Server URL.
+
+Note: free Spaces sleep after ~48h of inactivity. The first request after a sleep takes a minute or two while the Space restarts.
+
+## Local run
+```bash
+pip install -r requirements.txt
+uvicorn app:app --host 0.0.0.0 --port 7860
+```

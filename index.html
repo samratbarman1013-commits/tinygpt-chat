@@ -409,7 +409,11 @@
   function newChatObj(){ return { id: uid(), title: 'New chat', pinned: false, messages: [] }; }
   let chats, cur;
   try { chats = JSON.parse(localStorage.getItem('tg_chats')) || null; } catch (e) { chats = null; }
-  if (!Array.isArray(chats) || !chats.length) chats = [newChatObj()];
+  if (!Array.isArray(chats)) chats = null;
+  // fresh page on every open: keep only real conversations (and pinned
+  // chats), then start a brand-new empty chat on top
+  chats = (chats || []).filter(c => c.pinned || c.messages.some(m => m.role === 'user'));
+  chats.unshift(newChatObj());
   cur = chats[0].id;
   const curChat = () => chats.find(c => c.id === cur);
   const save = () => { try { localStorage.setItem('tg_chats', JSON.stringify(chats)); } catch (e) {} };
@@ -629,6 +633,9 @@
 
   /* ---------- boot ---------- */
   renderChat(); renderDrawer();
+  // open the keyboard once, the first time the app loads
+  // (browsers that require a user gesture simply ignore this)
+  try { input.focus(); } catch (e) {}
   loadModel().then(() => {
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       navigator.serviceWorker.register('sw.js').catch(() => {});

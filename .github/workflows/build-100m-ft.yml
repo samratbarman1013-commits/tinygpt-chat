@@ -65,6 +65,7 @@ jobs:
           STEPS_PER_RUN: ${{ inputs.steps }}
           RESUME: run/ckpt.pt
           TTOTAL_STEPS: '9600'
+          CHARSET_FILE: 'charset648.json'
         run: python train_100m.py
 
       - name: Save final model as DRAFT release

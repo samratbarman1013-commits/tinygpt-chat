@@ -583,7 +583,7 @@
     $('srvLabel').textContent = shortUrl(u || (apiBase || ''));
   };
   const openSrv = () => {
-    srvInput.value = localStorage.getItem('karma_api') || (apiBase || '');
+    srvInput.value = localStorage.getItem('karma_api') || (apiBase || '') || DEFAULT_API;
     srvPanel.classList.add('show');
     overlay.classList.add('show');
     closeDrawer(); closeMenu();
@@ -614,7 +614,7 @@
 
   async function tryHealth(base) {
     try {
-      const ctrl = ('AbortSignal' in window && AbortSignal.timeout) ? AbortSignal.timeout(4000) : undefined;
+      const ctrl = ('AbortSignal' in window && AbortSignal.timeout) ? AbortSignal.timeout(8000) : undefined;
       const r = await fetch(base + '/health', { signal: ctrl });
       if (r.ok) { const j = await r.json(); return j; }
     } catch (e) {}
@@ -736,6 +736,13 @@
   (async () => {
     const found = await resolveBase();
     if (found) { await connect(found.base); return; }
+    // nothing saved and this page is not the server itself -> connect to the
+    // built-in default with full retries (free servers sleep; waking up can
+    // take a minute on the first try)
+    if (DEFAULT_API) {
+      if (loadmsg) { try { loadmsg.textContent = 'waking up the server\u2026'; } catch (e) {} }
+      if (await connect(DEFAULT_API)) return;
+    }
     setDot('bad');
     if ($('loader') && loadmsg) loadmsg.textContent = 'no server connected';
     setTimeout(openSrv, 400);

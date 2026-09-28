@@ -613,7 +613,10 @@
     c.messages.push({ role: 'bot', text: reply || '\u2026', meta });
     addAiMsg(reply || '\u2026', meta);
     save(); scrollDown();
-    busy = false; $('sendBtn').disabled = false; input.focus();
+    busy = false; $('sendBtn').disabled = false;
+    // keep focus only on desktop (no on-screen keyboard there) — on phones
+    // the keyboard should NOT auto-open again after sending a message
+    if (window.matchMedia && window.matchMedia('(pointer: fine)').matches) input.focus();
   }
 
   $('sendBtn').addEventListener('click', send);

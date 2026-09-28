@@ -1,4 +1,4 @@
-"""TinyGPT Chat — online server.
+"""Karma Chat — online server.
 
 The model runs HERE (on the server); clients chat over the internet via POST /chat.
 Weights are read from the same flat `model.bin` the browser engine uses
@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from model import TinyGPT
 import tools
 
-app = FastAPI(title="TinyGPT Chat API")
+app = FastAPI(title="Karma Chat API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,7 +22,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-cfg = json.load(open("config.json", encoding="utf-8"))
+import os
+
+def _model_files():
+    """Model weights come from a PRIVATE Hugging Face repo when HF_REPO is set
+    (token via HF_TOKEN) — so the model file itself never has to be public.
+    Otherwise fall back to the local config.json / model.bin next to app.py."""
+    repo = os.getenv("HF_REPO")
+    if repo:
+        from huggingface_hub import hf_hub_download
+        kw = {"repo_id": repo, "repo_type": "model"}
+        if os.getenv("HF_TOKEN"):
+            kw["token"] = os.getenv("HF_TOKEN")
+        print(f"loading model from private HF repo: {repo}", flush=True)
+        return (hf_hub_download(filename="config.json", **kw),
+                hf_hub_download(filename="model.bin", **kw))
+    return "config.json", "model.bin"
+
+CFG_PATH, BIN_PATH = _model_files()
+cfg = json.load(open(CFG_PATH, encoding="utf-8"))
 itos = cfg["itos"]
 stoi = {c: i for i, c in enumerate(itos)}
 BOS = cfg.get("bos", "\u0002")
@@ -32,7 +50,7 @@ BLOCK = cfg["block"]
 model = TinyGPT(cfg["vocab"], cfg["d"], cfg["n_layers"], cfg["n_heads"], cfg["ffn"], cfg["block"])
 
 # --- load flat model.bin into the state dict ---
-raw = open("model.bin", "rb").read()
+raw = open(BIN_PATH, "rb").read()
 flat = torch.frombuffer(bytearray(raw), dtype=torch.float32)
 sd = model.state_dict()
 off = 0
@@ -45,7 +63,7 @@ if off != flat.numel():
     raise RuntimeError(f"weight size mismatch: {off} loaded vs {flat.numel()} available")
 model.load_state_dict(sd)
 model.eval()
-print(f"TinyGPT server ready — {cfg['nparams']:,} parameters loaded", flush=True)
+print(f"Karma server ready — {cfg['nparams']:,} parameters loaded", flush=True)
 
 
 class Msg(BaseModel):

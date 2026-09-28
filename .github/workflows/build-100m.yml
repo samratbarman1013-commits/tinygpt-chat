@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
-          pip install --quiet pyarrow
+          pip install --quiet numpy pyarrow
 
       - name: Download data
         run: |

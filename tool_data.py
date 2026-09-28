@@ -10,7 +10,9 @@ Format (exactly matches the server's tools.py output formats):
 
 Every generated line uses ONLY characters from the 648-char training charset
 so the vocab never changes and the checkpoint still loads.
-Writes data/tool_dialogues.txt (one dialogue per line, turns separated by \t).
+Writes data/tool_dialogues.txt (one dialogue per line, turns separated by \t)
+and charset648.json (codepoints of the exact training charset, for
+train_100m.py CHARSET_FILE).
 """
 import os
 import random
@@ -403,6 +405,10 @@ def charset_from_corpus():
 
 
 if __name__ == "__main__":
-    set_charset(charset_from_corpus())
-    print("charset from corpus:", len(CHARSET), "chars")
+    cs = charset_from_corpus()
+    set_charset(cs)
+    import json
+    with open("charset648.json", "w") as f:
+        f.write(json.dumps([ord(c) for c in cs]))
+    print("charset from corpus:", len(CHARSET), "chars -> charset648.json written")
     build()

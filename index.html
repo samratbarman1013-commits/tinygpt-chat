@@ -393,22 +393,16 @@
         loadmsg = $('loadmsg'), dot = $('dot'),
         srvPanel = $('srvPanel'), srvInput = $('srvInput');
 
-  /* ---------- keyboard-safe viewport ----------
-     On phones the app is position:fixed, pinned to the visible area from
-     both edges (top + bottom), so the browser cannot scroll it and no gap
-     can appear while the keyboard animates open or closed. */
+  /* ---------- keyboard-safe viewport ---------- */
   const vv = window.visualViewport;
   const syncViewport = () => {
     if (vv) {
       document.documentElement.style.setProperty('--app-height', vv.height + 'px');
       document.documentElement.style.setProperty('--vv-top', Math.max(0, vv.offsetTop) + 'px');
-      // on browsers that do NOT resize the layout viewport, the keyboard
-      // hides part of it -- pin the app's bottom above the keyboard
       const hidden = Math.max(0, document.documentElement.clientHeight - vv.offsetTop - vv.height);
       document.documentElement.style.setProperty('--vv-bottom', hidden + 'px');
     }
     if (window.scrollX !== 0 || window.scrollY !== 0) window.scrollTo(0, 0);
-    // while the keyboard opens/closes, keep the newest messages on screen
     if (chat.scrollHeight - chat.scrollTop - chat.clientHeight < 80) chat.scrollTop = chat.scrollHeight;
   };
   if (vv) {
@@ -417,10 +411,7 @@
     window.addEventListener('orientationchange', syncViewport);
   }
   window.addEventListener('resize', syncViewport);
-  // re-sync a moment after the keyboard starts opening (animation settles late)
   document.addEventListener('focusin', () => setTimeout(syncViewport, 300));
-  // safety net: while typing, poll every 300ms — even if the browser fires
-  // resize events late or never, the app snaps to the visible area anyway
   let focusPoll = null;
   document.addEventListener('focusin', () => {
     clearInterval(focusPoll);
@@ -446,8 +437,6 @@
   let chats, cur;
   try { chats = JSON.parse(localStorage.getItem('tg_chats')) || null; } catch (e) { chats = null; }
   if (!Array.isArray(chats)) chats = null;
-  // fresh page on every open: keep only real conversations (and pinned
-  // chats), then start a brand-new empty chat on top
   chats = (chats || []).filter(c => c.pinned || c.messages.some(m => m.role === 'user'));
   chats.unshift(newChatObj());
   cur = chats[0].id;
@@ -632,8 +621,11 @@
     return null;
   }
 
+  // built-in default server (Render) used when nothing else is set
+  const DEFAULT_API = 'https://karma-server-zm0t.onrender.com';
+
   // candidates in priority order: saved address -> this origin (when the
-  // server itself serves this page) -> nothing (ask the user)
+  // server itself serves this page) -> built-in default -> nothing (ask the user)
   async function resolveBase() {
     const saved = (localStorage.getItem('karma_api') || '').replace(/\/+$/, '');
     if (saved) {
@@ -645,6 +637,10 @@
         (location.protocol === 'https:' || location.protocol === 'http:')) {
       const j = await tryHealth(location.origin);
       if (j) return { base: location.origin, health: j };
+    }
+    if (DEFAULT_API) {
+      const j = await tryHealth(DEFAULT_API);
+      if (j) return { base: DEFAULT_API, health: j };
     }
     return null;
   }
@@ -727,8 +723,6 @@
     addAiMsg(reply, meta);
     save(); scrollDown();
     busy = false; $('sendBtn').disabled = false;
-    // keep focus only on desktop (no on-screen keyboard there) — on phones
-    // the keyboard should NOT auto-open again after sending a message
     if (window.matchMedia && window.matchMedia('(pointer: fine)').matches) input.focus();
   }
 
@@ -738,8 +732,6 @@
   /* ---------- boot ---------- */
   renderChat(); renderDrawer();
   refreshSrvLabel();
-  // open the keyboard once, the first time the app loads
-  // (browsers that require a user gesture simply ignore this)
   try { input.focus(); } catch (e) {}
   (async () => {
     const found = await resolveBase();

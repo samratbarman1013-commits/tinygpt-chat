@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#0a0a0a">
-<title>TinyGPT Chat — online, with live web tools</title>
+<title>Karma Chat — online, with live web tools</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
 <style>
@@ -264,7 +264,7 @@
       </svg>
     </button>
     <span class="dot load" id="dot"></span>
-    <div class="title" id="chatTitle">TinyGPT</div>
+    <div class="title" id="chatTitle">Karma</div>
     <button class="iconbtn iconbtn--round" id="newChatBtn" aria-label="New chat">
       <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -281,7 +281,7 @@
   <main class="chat" id="chat">
     <div class="loadwrap" id="loader">
       <div class="loadbar"><i></i></div>
-      <div id="loadmsg">loading TinyGPT…</div>
+      <div id="loadmsg">loading Karma…</div>
     </div>
   </main>
 
@@ -345,7 +345,7 @@
 
   <div class="toast" id="toast">Copied</div>
 </div>
-<div class="caption">TinyGPT Chat — ☰ history (pin chats), + new chat, ⋮ settings</div>
+<div class="caption">Karma Chat — ☰ history (pin chats), + new chat, ⋮ settings</div>
 
 <script>
 (function(){
@@ -515,7 +515,7 @@
         else addAiMsg(m.text, m.meta || null);
       });
     }
-    $('chatTitle').textContent = c.title === 'New chat' ? 'TinyGPT' : c.title;
+    $('chatTitle').textContent = c.title === 'New chat' ? 'Karma' : c.title;
   }
 
   function switchChat(id) { cur = id; renderChat(); renderDrawer(); }
@@ -541,7 +541,7 @@
   });
   $('aboutBtn').addEventListener('click', () => {
     closeMenu();
-    showToast((nparams ? nparams.toLocaleString() + '-parameter ' : '') + 'TinyGPT \u00b7 server + live web tools');
+    showToast((nparams ? nparams.toLocaleString() + '-parameter ' : '') + 'Karma \u00b7 server + live web tools');
   });
   $('helpBtn').addEventListener('click', () => {
     closeMenu();
@@ -567,13 +567,13 @@
     setDot('ok');
     const c = curChat();
     if (c.title === 'New chat') c.title = 'Welcome';
-    c.messages.push({ role: 'bot', text: 'Hi! I\u2019m TinyGPT \u2014 ' + (nparams ? nparams.toLocaleString() + ' parameters, ' : '') + 'running on the server. I can chat \u2014 and I also use live tools: ask me \u201cwho is Virat Kohli\u201d, \u201cwhat is 23*7\u201d, the time\u2026 or just say hi!', meta: 'server-side \u00b7 via internet' });
+    c.messages.push({ role: 'bot', text: 'Hi! I\u2019m Karma \u2014 ' + (nparams ? nparams.toLocaleString() + ' parameters, ' : '') + 'running on the server. I can chat \u2014 and I also use live tools: ask me \u201cwho is Virat Kohli\u201d, \u201cwhat is 23*7\u201d, the time\u2026 or just say hi!', meta: 'server-side \u00b7 via internet' });
     save(); renderChat(); renderDrawer();
   }
 
   /* ---------- send ---------- */
   const SOURCE_LABEL = {
-    model: 'TinyGPT model',
+    model: 'Karma model',
     wikipedia: '\ud83c\udf10 live web (Wikipedia)',
     duckduckgo: '\ud83c\udf10 live web (DuckDuckGo)',
     calculator: '\ud83e\uddee calculator',

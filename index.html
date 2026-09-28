@@ -249,28 +249,6 @@
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-  /* ---------- Server-address panel ---------- */
-  .srv-panel{
-    position:absolute;z-index:80;left:50%;top:50%;transform:translate(-50%,-50%);
-    width:min(330px,86%);background:#232323;border:1px solid var(--border);
-    border-radius:18px;padding:22px 18px 18px;
-    box-shadow:0 24px 64px rgba(0,0,0,0.6);display:none;
-  }
-  .srv-panel.show{display:block}
-  .srv-panel h3{color:var(--text);font-size:17px;font-weight:700;margin-bottom:6px}
-  .srv-panel p{color:var(--faint);font-size:12.5px;line-height:1.5;margin-bottom:14px}
-  .srv-panel input{
-    width:100%;background:var(--bg);border:1px solid var(--border);border-radius:12px;
-    color:var(--text);font-family:inherit;font-size:13.5px;padding:11px 12px;
-    outline:none;margin-bottom:12px;
-  }
-  .srv-panel input:focus{border-color:var(--send)}
-  .srv-panel .connect{
-    width:100%;background:var(--send);border:none;border-radius:12px;color:#fff;
-    font-family:inherit;font-size:15px;font-weight:500;padding:12px;cursor:pointer;
-  }
-  .srv-panel .connect:active{transform:scale(.98)}
-
   @media (prefers-reduced-motion:reduce){
     *{animation:none!important;transition:none!important}
   }
@@ -347,12 +325,6 @@
 
   <!-- settings menu -->
   <div class="menu" id="menu" role="menu">
-    <button role="menuitem" id="srvBtn">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>
-      </svg>
-      <span id="srvLabel">Server URL</span>
-    </button>
     <button role="menuitem" id="tempBtn">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -373,14 +345,6 @@
     </button>
   </div>
 
-  <!-- server address panel -->
-  <div class="srv-panel" id="srvPanel">
-    <h3>Server address</h3>
-    <p>Karma is an online AI — the model lives on a server. Enter the server address to connect.</p>
-    <input id="srvInput" type="url" placeholder="https://your-server.example.com" autocapitalize="off" autocorrect="off" spellcheck="false">
-    <button class="connect" id="srvSave">Connect</button>
-  </div>
-
   <div class="toast" id="toast">Copied</div>
 </div>
 <div class="caption">Karma Chat — ☰ history (pin chats), + new chat, ⋮ settings</div>
@@ -390,8 +354,7 @@
   const $ = id => document.getElementById(id);
   const chat = $('chat'), drawer = $('drawer'), overlay = $('overlay'),
         menu = $('menu'), input = $('msgInput'), toast = $('toast'),
-        loadmsg = $('loadmsg'), dot = $('dot'),
-        srvPanel = $('srvPanel'), srvInput = $('srvInput');
+        loadmsg = $('loadmsg'), dot = $('dot');
 
   /* ---------- keyboard-safe viewport ---------- */
   const vv = window.visualViewport;
@@ -445,11 +408,11 @@
 
   /* ---------- drawer / menu / toast ---------- */
   const openDrawer = () => { drawer.classList.add('show'); overlay.classList.add('show'); };
-  const closeDrawer = () => { drawer.classList.remove('show'); if (!srvPanel.classList.contains('show')) overlay.classList.remove('show'); };
+  const closeDrawer = () => { drawer.classList.remove('show'); overlay.classList.remove('show'); };
   const closeMenu = () => menu.classList.remove('show');
   $('menuBtn').addEventListener('click', () => { closeMenu(); openDrawer(); });
   $('drawerClose').addEventListener('click', closeDrawer);
-  overlay.addEventListener('click', () => { closeDrawer(); closeMenu(); closeSrv(); });
+  overlay.addEventListener('click', () => { closeDrawer(); closeMenu(); });
   $('dotsBtn').addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('show'); closeDrawer(); });
   document.addEventListener('click', e => {
     if (!menu.contains(e.target) && e.target.closest('#dotsBtn') === null) closeMenu();
@@ -576,37 +539,8 @@
     window.open('https://github.com/samratbarman1013-commits/tinygpt-chat', '_blank');
   });
 
-  /* ---------- server address ---------- */
-  const shortUrl = u => !u ? 'Server URL' : (u.replace(/^https?:\/\//, '').slice(0, 22) || 'Server URL');
-  const refreshSrvLabel = () => {
-    const u = localStorage.getItem('karma_api');
-    $('srvLabel').textContent = shortUrl(u || (apiBase || ''));
-  };
-  const openSrv = () => {
-    srvInput.value = localStorage.getItem('karma_api') || (apiBase || '') || DEFAULT_API;
-    srvPanel.classList.add('show');
-    overlay.classList.add('show');
-    closeDrawer(); closeMenu();
-    setTimeout(() => { try { srvInput.focus(); } catch (e) {} }, 60);
-  };
-  const closeSrv = () => { srvPanel.classList.remove('show'); if (!drawer.classList.contains('show')) overlay.classList.remove('show'); };
-  $('srvBtn').addEventListener('click', openSrv);
-  $('srvSave').addEventListener('click', async () => {
-    let v = (srvInput.value || '').trim().replace(/\/+$/, '');
-    if (v && !/^https?:\/\//i.test(v)) v = 'https://' + v;
-    if (!v) { showToast('enter a server address'); return; }
-    localStorage.setItem('karma_api', v);
-    refreshSrvLabel();
-    closeSrv();
-    setDot('load');
-    const lw = $('loader') || null;
-    if (lw) { loadmsg.textContent = 'connecting to ' + shortUrl(v) + '\u2026'; }
-    const ok = await connect(v);
-    if (!ok) showToast('could not reach ' + shortUrl(v));
-  });
-  srvInput.addEventListener('keydown', e => { if (e.key === 'Enter') $('srvSave').click(); });
-
   /* ---------- backend: server API (model + live web tools) ---------- */
+  const shortUrl = u => !u ? 'Server URL' : (u.replace(/^https?:\/\//, '').slice(0, 22) || 'Server URL');
   function setDot(kind) {
     dot.className = 'dot ' + kind;
     dot.title = kind === 'ok' ? 'connected' : kind === 'bad' ? 'failed' : 'connecting';
@@ -624,15 +558,9 @@
   // built-in default server (Render) used when nothing else is set
   const DEFAULT_API = 'https://karma-server-zm0t.onrender.com';
 
-  // candidates in priority order: saved address -> this origin (when the
-  // server itself serves this page) -> built-in default -> nothing (ask the user)
+  // fixed setup: this origin (when the server itself serves this page)
+  // -> built-in default server. the user never types an address.
   async function resolveBase() {
-    const saved = (localStorage.getItem('karma_api') || '').replace(/\/+$/, '');
-    if (saved) {
-      const j = await tryHealth(saved);
-      if (j) return { base: saved, health: j };
-      return null; // a saved address that is down -> let the user fix it
-    }
     if (location.origin && location.origin !== 'null' &&
         (location.protocol === 'https:' || location.protocol === 'http:')) {
       const j = await tryHealth(location.origin);
@@ -677,7 +605,7 @@
   async function send() {
     const text = input.value.trim();
     if (!text || busy) return;
-    if (!apiBase) { openSrv(); return; }
+    if (!apiBase) { showToast('connecting to the server\u2026'); return; }
     busy = true; $('sendBtn').disabled = true; input.value = '';
     const c = curChat();
     if (c.title === 'New chat') {
@@ -724,21 +652,18 @@
 
   /* ---------- boot ---------- */
   renderChat(); renderDrawer();
-  refreshSrvLabel();
   try { input.focus(); } catch (e) {}
   (async () => {
     const found = await resolveBase();
     if (found) { await connect(found.base); return; }
-    // nothing saved and this page is not the server itself -> connect to the
-    // built-in default with full retries (free servers sleep; waking up can
-    // take a minute on the first try)
+    // this page is not the server itself -> connect to the built-in default
+    // with full retries (free servers sleep; waking up can take a minute)
     if (DEFAULT_API) {
       if (loadmsg) { try { loadmsg.textContent = 'waking up the server\u2026'; } catch (e) {} }
       if (await connect(DEFAULT_API)) return;
     }
     setDot('bad');
-    if ($('loader') && loadmsg) loadmsg.textContent = 'no server connected';
-    setTimeout(openSrv, 400);
+    if ($('loader') && loadmsg) loadmsg.textContent = 'could not reach the server \u2014 check internet, then reopen Karma';
   })();
 })();
 </script>

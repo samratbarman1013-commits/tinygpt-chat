@@ -1,51 +1,45 @@
----
-title: TinyGPT Chat
-emoji: 🤖
-colorFrom: indigo
-colorTo: blue
-sdk: docker
-app_port: 7860
-pinned: false
-license: mit
-short_description: Real transformer chatbot + live web tools, running server-side
----
+# Karma Chat — Server & API
 
-# TinyGPT Chat — server edition with live tools
-
-A transformer chatbot trained from scratch on DailyDialog + UltraChat, running **on the server**,
-with a real tool layer: factual questions get answered from **live web sources**
-(Wikipedia / DuckDuckGo), plus calculator, clock and dice tools.
-The web page talks to the model over the internet (`POST /chat`) — nothing heavy runs on the client.
-
-## Tools (server-side, rule-routed)
-
-| Ask something like...            | Answered by            |
-|----------------------------------|------------------------|
-| "what is 23*7+5"                 | 🧮 calculator (exact)   |
-| "what time is it" / "aaj koto baje" | 🕰 clock (IST)       |
-| "who is Virat Kohli"              | 🌐 Wikipedia (live)     |
-| "tell me about the Taj Mahal"     | 🌐 Wikipedia (live)     |
-| anything else                     | 🤖 the model (chat)     |
-
-## Run locally
-
-```bash
-pip install torch --index-url https://download.pytorch.org/whl/cpu
-pip install -r requirements.txt
-uvicorn app:app --host 0.0.0.0 --port 7860
-```
-
-Open http://localhost:7860
+The Karma AI model runs **here on the server**. Clients (the website, the Android APK, or any API user) only send chat requests over the internet — no model is ever shipped to them.
 
 ## API
 
-```bash
-curl -X POST http://localhost:7860/chat \
-  -H "Content-Type: application/json" \
-  -d '{"messages":[{"role":"user","text":"who is Albert Einstein"}]}'
-# {"reply":"Albert Einstein was ... (source: Wikipedia)","source":"wikipedia"}
+CORS is enabled — any website or app can call this API.
+
+### `GET /health`
+```json
+{"ok": true, "params": 6083328, "tools": ["calculator", "clock", "dice", "wikipedia", "duckduckgo"]}
 ```
 
-Files: `app.py` (FastAPI server), `tools.py` (tool layer), `model.py` (transformer),
-`model.bin` (weights, float32 flat), `config.json` (architecture + vocab),
-`static/index.html` (chat client), `Dockerfile`.
+### `POST /chat`
+```json
+{
+  "messages": [
+    {"role": "user", "text": "who is Virat Kohli"},
+    {"role": "bot",  "text": "..."},
+    {"role": "user", "text": "and what is 23*7?"}
+  ],
+  "temp": 0.75,
+  "topk": 40,
+  "max_new": 160
+}
+```
+Response:
+```json
+{"reply": "161", "source": "calculator"}
+```
+
+`source` tells you where the answer came from: `model` (the Karma transformer), `wikipedia`, `duckduckgo`, `calculator`, `clock`, or `dice`.
+
+Quick test:
+```bash
+curl https://YOUR-SERVER/health
+curl -X POST https://YOUR-SERVER/chat -H 'Content-Type: application/json' \
+  -d '{"messages":[{"role":"user","text":"what time is it"}]}'
+```
+
+## Deploy on a Hugging Face Space (free, ~16 GB RAM)
+
+1. Create a free account at https://huggingface.co
+2. **New Space** → name it (e.g. `karma-chat`) → SDK: **Docker** → Space hardware: free CPU
+3. Upload all files from this package (`app.py`, `tools.py`, `model.py`, `Dockerfile`, `requirements.txt`, `static/`) — "Add file → Upload files

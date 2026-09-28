@@ -1,58 +1,31 @@
-# TinyGPT Chat — a real 3M-parameter transformer chatbot
+# Karma Chat — a real transformer AI, online
 
-A complete, from-scratch AI chatbot that runs **100% on your device** — no server, no API keys, no internet needed after the first load.
+A from-scratch AI chatbot. **The model lives on a server; clients are thin apps that talk to its API.** No model weights are public.
 
-- **3,251,200 parameters** (3.25M) decoder-only transformer, GPT-style architecture
-- Trained from scratch (random init) on the DailyDialog dataset of real human conversations
-- Runs in the browser via a **pure-JavaScript inference engine** (`engine.js`) — no ONNX, no WebAssembly, no ML libraries
-- Ships as an installable PWA (works offline), as a native Android APK (model bundled inside), and as a client-server web app (`server/`)
+- **Karma** = the AI (trained from scratch, GPT-style decoder-only transformer)
+- Server: FastAPI (`server/`) — the model + live web tools (calculator, clock, dice, Wikipedia, DuckDuckGo) + chat UI
+- Clients: this website (API client), the Android APK (thin client, ~42 KB), or any app that calls the API
+- Model privacy: weights are kept on the server / in a private Hugging Face repo — never shipped to clients
 
-## Architecture
+## Try it
 
-| Component | Value |
-|---|---|
-| Parameters | 3,251,200 (3.25M) |
-| Layers | 4 transformer blocks |
-| Model dimension | 256 |
-| Attention heads | 8 (head dim 32) |
-| Feed-forward | 1024 |
-| Context window | 256 tokens |
-| Tokenizer | character-level (vocab 102) |
-| Output head | tied with input embeddings |
-| Positional encoding | learned |
+1. Deploy the server (see `server/README.md` — one free Hugging Face Space)
+2. Open https://samratbarman1013-commits.github.io/tinygpt-chat/ and enter your server address (⋮ → Server URL), or install the APK (see releases) and do the same
+3. Chat — needs internet, everything runs on your server
 
-Training: AdamW, lr 1e-3 with warmup + cosine decay, batch 16 × 256 tokens, 8000 steps on ~10,700 DailyDialog multi-turn conversations (~5.6M characters), trained on GitHub Actions.
+## The API
 
-## How it works
-
-1. `train.py` — trains the transformer in PyTorch and exports weights to a flat `model.bin` (float32) + `config.json`
-2. `engine.js` — a dependency-free JS class implementing the exact same forward pass (embeddings → 4× [LayerNorm → causal self-attention → residual → LayerNorm → GELU MLP → residual] → LayerNorm → tied output head) with a KV cache, temperature and top-k sampling
-3. `index.html` — chat UI, loads `model.bin` and runs inference entirely client-side
-4. `server/` — optional client-server mode: FastAPI backend runs the model, web client chats over the internet
-
-## Run it
-
-Open the GitHub Pages site: model downloads once (≈13 MB), then everything runs offline.
-
-Or install the Android APK — the model is bundled inside the app.
-
-## Train it yourself
-
-Everything needed to reproduce the model is in this repo:
-
-```bash
-pip install torch
-mkdir -p data && curl -sL -o train.zip "https://huggingface.co/datasets/roskoN/dailydialog/resolve/main/train.zip" && unzip train.zip -d data
-python train.py
+```
+GET  /health   → {"ok": true, "params": ..., "tools": [...]}
+POST /chat     → {"reply": "...", "source": "model|wikipedia|duckduckgo|calculator|clock|dice"}
 ```
 
-The GitHub Actions workflow `.github/workflows/build-model.yml` does exactly this on GitHub's servers on demand (re-run it with the "rebuild" input to retrain).
+CORS is open — any website or app can use it. Full docs and deployment guide: [`server/README.md`](server/README.md).
 
 ## History
 
-- v1 — 983,488 parameters, 2 layers, trained 3000 steps
-- v2 — 3,251,200 parameters, 4 layers, trained 8000 steps (current)
+Started as an experiment to train a real transformer from scratch and run it fully in the browser: 1M → 3.25M → 6M parameters, then scaled to 100M (chunked training on GitHub Actions). Now architecture is client–server so the model stays private.
 
-## Honest expectations
-
-3M parameters is still ~1/60,000th of GPT-4-class models. TinyGPT speaks simple but much more coherent English than the 1M version. It demonstrates the full transformer stack end-to-end, not frontier chat quality.
+- v1.x — on-device models (1M / 3.25M / 6M), offline APK + PWA (older releases removed)
+- v2.0 — 100M-parameter model (private; deployed on the server only)
+- v3.0 — the API update: thin-client APK + website, model no longer shipped

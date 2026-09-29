@@ -343,6 +343,12 @@
       </svg>
       About
     </button>
+    <button role="menuitem" id="appBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Get the Android app
+    </button>
   </div>
 
   <div class="toast" id="toast">Copied</div>
@@ -529,6 +535,10 @@
     localStorage.setItem('tg_temp', tempMode);
     $('tempLabel').textContent = tempLabel();
     showToast('Sampling: ' + tempMode + ' (' + TEMPS[tempMode] + ')');
+  });
+  $('appBtn').addEventListener('click', () => {
+    closeMenu();
+    window.open('https://github.com/samratbarman1013-commits/tinygpt-chat/releases/download/v3.0/Karma-Chat.apk', '_blank');
   });
   $('aboutBtn').addEventListener('click', () => {
     closeMenu();
